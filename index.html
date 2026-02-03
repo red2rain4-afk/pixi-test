@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테트리스</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a2e;
+            font-family: 'Courier New', monospace;
+        }
+        #game-container {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.min.js"></script>
+    <script>
+        // 게임 상수
+        const BLOCK_SIZE = 32;
+        const BOARD_WIDTH = 10;
+        const BOARD_HEIGHT = 20;
+        const COLORS = {
+            I: 0x00F0F0,
+            O: 0xF0F000,
+            T: 0xA000F0,
+            S: 0x00F000,
+            Z: 0xF00000,
+            J: 0x0000F0,
+            L: 0xF0A000
+        };
+
+        // 테트로미노 모양 정의
+        const SHAPES = {
+            I: [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
+            O: [[1,1], [1,1]],
+            T: [[0,1,0], [1,1,1], [0,0,0]],
+            S: [[0,1,1], [1,1,0], [0,0,0]],
+            Z: [[1,1,0], [0,1,1], [0,0,0]],
+            J: [[1,0,0], [1,1,1], [0,0,0]],
+            L: [[0,0,1], [1,1,1], [0,0,0]]
+        };
+
+        const SHAPE_NAMES = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+
+        // 게임 상태
+        const GameState = {
+            PLAYING: 'PLAYING',
+            PAUSED: 'PAUSED',
+            GAME_OVER: 'GAME_OVER'
+        };
+
+        console.log('Constants defined');
+
+        class Tetromino {
+            constructor(type) {
+                this.type = type;
+                this.shape = SHAPES[type];
+                this.color = COLORS[type];
+                this.x = Math.floor(BOARD_WIDTH / 2) - Math.floor(this.shape[0].length / 2);
+                this.y = 0;
+                this.rotation = 0;
+            }
+
+            rotate() {
+                // 시계방향 90도 회전: 전치 후 각 행 뒤집기
+                const newShape = [];
+                const size = this.shape.length;
+
+                for (let i = 0; i < size; i++) {
+                    newShape[i] = [];
+                    for (let j = 0; j < size; j++) {
+                        newShape[i][j] = this.shape[size - 1 - j][i];
+                    }
+                }
+
+                return newShape;
+            }
+
+            getBlocks() {
+                // 현재 피스가 차지하는 절대 좌표 반환
+                const blocks = [];
+                for (let y = 0; y < this.shape.length; y++) {
+                    for (let x = 0; x < this.shape[y].length; x++) {
+                        if (this.shape[y][x]) {
+                            blocks.push({ x: this.x + x, y: this.y + y });
+                        }
+                    }
+                }
+                return blocks;
+            }
+        }
+
+        console.log('Tetromino class defined');
+
+        class Board {
+            constructor() {
+                this.grid = [];
+                for (let y = 0; y < BOARD_HEIGHT; y++) {
+                    this.grid[y] = new Array(BOARD_WIDTH).fill(0);
+                }
+            }
+
+            checkCollision(tetromino, offsetX = 0, offsetY = 0) {
+                const blocks = tetromino.getBlocks();
+
+                for (const block of blocks) {
+                    const newX = block.x + offsetX;
+                    const newY = block.y + offsetY;
+
+                    // 벽 충돌
+                    if (newX < 0 || newX >= BOARD_WIDTH) return true;
+
+                    // 바닥 충돌
+                    if (newY >= BOARD_HEIGHT) return true;
+
+                    // 상단은 허용 (스폰 위치)
+                    if (newY < 0) continue;
+
+                    // 블록 충돌
+                    if (this.grid[newY][newX] !== 0) return true;
+                }
+
+                return false;
+            }
+
+            placePiece(tetromino) {
+                const blocks = tetromino.getBlocks();
+
+                for (const block of blocks) {
+                    if (block.y >= 0 && block.y < BOARD_HEIGHT) {
+                        this.grid[block.y][block.x] = tetromino.type;
+                    }
+                }
+            }
+
+            clearLines() {
+                let linesCleared = 0;
+
+                for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+                    if (this.grid[y].every(cell => cell !== 0)) {
+                        // 줄 제거
+                        this.grid.splice(y, 1);
+                        this.grid.unshift(new Array(BOARD_WIDTH).fill(0));
+                        linesCleared++;
+                        y++; // 같은 y를 다시 체크
+                    }
+                }
+
+                return linesCleared;
+            }
+
+            isGameOver() {
+                // 최상단 행에 블록이 있으면 게임오버
+                return this.grid[0].some(cell => cell !== 0);
+            }
+        }
+
+        console.log('Board class defined');
+
+        class Renderer {
+            constructor() {
+                this.app = new PIXI.Application();
+                this.boardContainer = new PIXI.Container();
+                this.pieceContainer = new PIXI.Container();
+                this.uiContainer = new PIXI.Container();
+
+                this.scoreText = null;
+                this.levelText = null;
+                this.linesText = null;
+                this.gameOverText = null;
+            }
+
+            async init() {
+                await this.app.init({
+                    width: BOARD_WIDTH * BLOCK_SIZE + 200,
+                    height: BOARD_HEIGHT * BLOCK_SIZE,
+                    backgroundColor: 0x16213e
+                });
+
+                document.getElementById('game-container').appendChild(this.app.canvas);
+
+                this.app.stage.addChild(this.boardContainer);
+                this.app.stage.addChild(this.pieceContainer);
+                this.app.stage.addChild(this.uiContainer);
+
+                this.createUI();
+            }
+
+            createUI() {
+                // 점수
+                this.scoreText = new PIXI.Text({
+                    text: '점수: 0',
+                    style: { fill: 0xffffff, fontSize: 20 }
+                });
+                this.scoreText.x = BOARD_WIDTH * BLOCK_SIZE + 20;
+                this.scoreText.y = 200;
+                this.uiContainer.addChild(this.scoreText);
+
+                // 레벨
+                this.levelText = new PIXI.Text({
+                    text: '레벨: 1',
+                    style: { fill: 0xffffff, fontSize: 20 }
+                });
+                this.levelText.x = BOARD_WIDTH * BLOCK_SIZE + 20;
+                this.levelText.y = 240;
+                this.uiContainer.addChild(this.levelText);
+
+                // 줄 수
+                this.linesText = new PIXI.Text({
+                    text: '줄: 0',
+                    style: { fill: 0xffffff, fontSize: 20 }
+                });
+                this.linesText.x = BOARD_WIDTH * BLOCK_SIZE + 20;
+                this.linesText.y = 280;
+                this.uiContainer.addChild(this.linesText);
+            }
+
+            drawNextPiece(nextPieceType) {
+                // 기존 미리보기 제거
+                if (this.nextPieceContainer) {
+                    this.uiContainer.removeChild(this.nextPieceContainer);
+                }
+
+                this.nextPieceContainer = new PIXI.Container();
+                this.uiContainer.addChild(this.nextPieceContainer);
+
+                // "다음" 텍스트
+                const label = new PIXI.Text({
+                    text: '다음',
+                    style: { fill: 0xffffff, fontSize: 20 }
+                });
+                label.x = BOARD_WIDTH * BLOCK_SIZE + 20;
+                label.y = 50;
+                this.nextPieceContainer.addChild(label);
+
+                // 다음 피스 그리기
+                const shape = SHAPES[nextPieceType];
+                const color = COLORS[nextPieceType];
+                const offsetX = BOARD_WIDTH * BLOCK_SIZE + 20;
+                const offsetY = 90;
+
+                for (let y = 0; y < shape.length; y++) {
+                    for (let x = 0; x < shape[y].length; x++) {
+                        if (shape[y][x]) {
+                            const block = new PIXI.Graphics();
+                            block.rect(offsetX + x * 24, offsetY + y * 24, 22, 22);
+                            block.fill(color);
+                            this.nextPieceContainer.addChild(block);
+                        }
+                    }
+                }
+            }
+
+            drawBoard(board) {
+                this.boardContainer.removeChildren();
+
+                // 그리드 선
+                const grid = new PIXI.Graphics();
+                grid.rect(0, 0, BOARD_WIDTH * BLOCK_SIZE, BOARD_HEIGHT * BLOCK_SIZE);
+                grid.stroke({ width: 2, color: 0x0f3460 });
+                this.boardContainer.addChild(grid);
+
+                // 보드 블록
+                for (let y = 0; y < BOARD_HEIGHT; y++) {
+                    for (let x = 0; x < BOARD_WIDTH; x++) {
+                        if (board.grid[y][x] !== 0) {
+                            const block = new PIXI.Graphics();
+                            const color = COLORS[board.grid[y][x]];
+                            block.rect(x * BLOCK_SIZE + 1, y * BLOCK_SIZE + 1,
+                                       BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+                            block.fill(color);
+                            this.boardContainer.addChild(block);
+                        }
+                    }
+                }
+            }
+
+            drawPiece(tetromino) {
+                this.pieceContainer.removeChildren();
+
+                const blocks = tetromino.getBlocks();
+                for (const block of blocks) {
+                    if (block.y >= 0) {
+                        const graphic = new PIXI.Graphics();
+                        graphic.rect(block.x * BLOCK_SIZE + 1, block.y * BLOCK_SIZE + 1,
+                                    BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+                        graphic.fill(tetromino.color);
+                        this.pieceContainer.addChild(graphic);
+                    }
+                }
+            }
+
+            updateUI(score, level, lines) {
+                this.scoreText.text = `점수: ${score}`;
+                this.levelText.text = `레벨: ${level}`;
+                this.linesText.text = `줄: ${lines}`;
+            }
+
+            showGameOver() {
+                if (!this.gameOverText) {
+                    this.gameOverText = new PIXI.Text({
+                        text: 'GAME OVER\n\nR: 재시작',
+                        style: {
+                            fill: 0xff0000,
+                            fontSize: 32,
+                            align: 'center'
+                        }
+                    });
+                    this.gameOverText.x = BOARD_WIDTH * BLOCK_SIZE / 2 - 100;
+                    this.gameOverText.y = BOARD_HEIGHT * BLOCK_SIZE / 2 - 50;
+                }
+                this.uiContainer.addChild(this.gameOverText);
+            }
+
+            hideGameOver() {
+                if (this.gameOverText) {
+                    this.uiContainer.removeChild(this.gameOverText);
+                }
+            }
+
+            showPaused() {
+                if (!this.pausedText) {
+                    this.pausedText = new PIXI.Text({
+                        text: 'PAUSED\n\nP: 계속',
+                        style: {
+                            fill: 0xffff00,
+                            fontSize: 32,
+                            align: 'center'
+                        }
+                    });
+                    this.pausedText.x = BOARD_WIDTH * BLOCK_SIZE / 2 - 80;
+                    this.pausedText.y = BOARD_HEIGHT * BLOCK_SIZE / 2 - 50;
+                }
+                this.uiContainer.addChild(this.pausedText);
+            }
+
+            hidePaused() {
+                if (this.pausedText && this.uiContainer.children.includes(this.pausedText)) {
+                    this.uiContainer.removeChild(this.pausedText);
+                }
+            }
+        }
+
+        console.log('Renderer class defined');
+
+        class PieceBag {
+            constructor() {
+                this.bag = [];
+                this.refill();
+            }
+
+            refill() {
+                // 7개 피스를 모두 넣고 섞음
+                this.bag = [...SHAPE_NAMES];
+                for (let i = this.bag.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];
+                }
+            }
+
+            next() {
+                if (this.bag.length === 0) {
+                    this.refill();
+                }
+                return this.bag.pop();
+            }
+        }
+
+        console.log('PieceBag class defined');
+
+        class Tetris {
+            constructor() {
+                this.board = new Board();
+                this.renderer = new Renderer();
+                this.pieceBag = new PieceBag();
+
+                this.currentPiece = null;
+                this.nextPiece = null;
+
+                this.score = 0;
+                this.level = 1;
+                this.lines = 0;
+
+                this.state = GameState.PLAYING;
+                this.dropCounter = 0;
+                this.dropInterval = 1000; // 1초
+                this.lastTime = 0;
+
+                this.keysPressed = {};
+            }
+
+            async init() {
+                await this.renderer.init();
+                this.spawnPiece();
+                this.setupInput();
+                this.start();
+            }
+
+            spawnPiece() {
+                if (!this.nextPiece) {
+                    this.nextPiece = this.pieceBag.next();
+                }
+
+                this.currentPiece = new Tetromino(this.nextPiece);
+                this.nextPiece = this.pieceBag.next();
+
+                // 스폰 위치에서 충돌하면 게임오버
+                if (this.board.checkCollision(this.currentPiece)) {
+                    this.state = GameState.GAME_OVER;
+                    this.renderer.showGameOver();
+                }
+            }
+
+            start() {
+                const gameLoop = (time = 0) => {
+                    const deltaTime = time - this.lastTime;
+                    this.lastTime = time;
+
+                    if (this.state === GameState.PLAYING) {
+                        this.update(deltaTime);
+                    } else {
+                        // 일시정지나 게임오버 상태에서도 렌더링
+                        this.render();
+                    }
+                    requestAnimationFrame(gameLoop);
+                };
+                requestAnimationFrame(gameLoop);
+            }
+
+            update(deltaTime) {
+                this.dropCounter += deltaTime;
+
+                if (this.dropCounter > this.dropInterval) {
+                    this.moveDown();
+                    this.dropCounter = 0;
+                }
+
+                this.render();
+            }
+
+            moveDown() {
+                if (!this.board.checkCollision(this.currentPiece, 0, 1)) {
+                    this.currentPiece.y++;
+                } else {
+                    // 피스를 보드에 고정
+                    this.board.placePiece(this.currentPiece);
+
+                    // 줄 제거
+                    const linesCleared = this.board.clearLines();
+                    if (linesCleared > 0) {
+                        this.lines += linesCleared;
+                        this.updateScore(linesCleared);
+                    }
+
+                    // 새 피스 생성
+                    this.spawnPiece();
+                }
+            }
+
+            updateScore(linesCleared) {
+                const points = [0, 100, 300, 500, 800];
+                this.score += points[linesCleared] * this.level;
+
+                // 레벨업 (10줄마다)
+                const newLevel = Math.floor(this.lines / 10) + 1;
+                if (newLevel > this.level) {
+                    this.level = newLevel;
+                    this.dropInterval = Math.max(100, 1000 - (this.level - 1) * 100);
+                }
+            }
+
+            render() {
+                this.renderer.drawBoard(this.board);
+                if (this.currentPiece) {
+                    this.renderer.drawPiece(this.currentPiece);
+                }
+                this.renderer.updateUI(this.score, this.level, this.lines);
+                if (this.nextPiece) {
+                    this.renderer.drawNextPiece(this.nextPiece);
+                }
+
+                if (this.state === GameState.PAUSED) {
+                    this.renderer.showPaused();
+                } else {
+                    this.renderer.hidePaused();
+                }
+            }
+
+            setupInput() {
+                document.addEventListener('keydown', (e) => {
+                    if (this.keysPressed[e.key]) return; // 키 반복 방지
+                    this.keysPressed[e.key] = true;
+
+                    if (this.state === GameState.GAME_OVER) {
+                        if (e.key === 'r' || e.key === 'R') {
+                            this.restart();
+                        }
+                        return;
+                    }
+
+                    if (this.state === GameState.PAUSED) {
+                        if (e.key === 'p' || e.key === 'P') {
+                            this.state = GameState.PLAYING;
+                        }
+                        return;
+                    }
+
+                    switch(e.key) {
+                        case 'ArrowLeft':
+                            this.moveLeft();
+                            break;
+                        case 'ArrowRight':
+                            this.moveRight();
+                            break;
+                        case 'ArrowDown':
+                            this.moveDown();
+                            break;
+                        case 'ArrowUp':
+                            this.rotate();
+                            break;
+                        case 'p':
+                        case 'P':
+                            this.state = GameState.PAUSED;
+                            break;
+                    }
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    this.keysPressed[e.key] = false;
+                });
+            }
+
+            moveLeft() {
+                if (!this.board.checkCollision(this.currentPiece, -1, 0)) {
+                    this.currentPiece.x--;
+                }
+            }
+
+            moveRight() {
+                if (!this.board.checkCollision(this.currentPiece, 1, 0)) {
+                    this.currentPiece.x++;
+                }
+            }
+
+            rotate() {
+                const originalShape = this.currentPiece.shape;
+                const rotatedShape = this.currentPiece.rotate();
+                this.currentPiece.shape = rotatedShape;
+
+                // 충돌 체크
+                if (this.board.checkCollision(this.currentPiece)) {
+                    // 벽 킥 시도: 왼쪽으로 1칸
+                    this.currentPiece.x--;
+                    if (this.board.checkCollision(this.currentPiece)) {
+                        // 오른쪽으로 2칸
+                        this.currentPiece.x += 2;
+                        if (this.board.checkCollision(this.currentPiece)) {
+                            // 회전 취소
+                            this.currentPiece.x--;
+                            this.currentPiece.shape = originalShape;
+                        }
+                    }
+                }
+            }
+
+            restart() {
+                this.board = new Board();
+                this.pieceBag = new PieceBag();
+                this.score = 0;
+                this.level = 1;
+                this.lines = 0;
+                this.dropInterval = 1000;
+                this.state = GameState.PLAYING;
+                this.nextPiece = null;
+                this.renderer.hideGameOver();
+                this.spawnPiece();
+            }
+        }
+
+        console.log('Tetris class defined');
+
+        // 게임 초기화 및 시작
+        const game = new Tetris();
+        game.init();
+    </script>
+</body>
+</html>
