@@ -59,6 +59,47 @@
         };
 
         console.log('Constants defined');
+
+        class Tetromino {
+            constructor(type) {
+                this.type = type;
+                this.shape = SHAPES[type];
+                this.color = COLORS[type];
+                this.x = Math.floor(BOARD_WIDTH / 2) - Math.floor(this.shape[0].length / 2);
+                this.y = 0;
+                this.rotation = 0;
+            }
+
+            rotate() {
+                // 시계방향 90도 회전: 전치 후 각 행 뒤집기
+                const newShape = [];
+                const size = this.shape.length;
+
+                for (let i = 0; i < size; i++) {
+                    newShape[i] = [];
+                    for (let j = 0; j < size; j++) {
+                        newShape[i][j] = this.shape[size - 1 - j][i];
+                    }
+                }
+
+                return newShape;
+            }
+
+            getBlocks() {
+                // 현재 피스가 차지하는 절대 좌표 반환
+                const blocks = [];
+                for (let y = 0; y < this.shape.length; y++) {
+                    for (let x = 0; x < this.shape[y].length; x++) {
+                        if (this.shape[y][x]) {
+                            blocks.push({ x: this.x + x, y: this.y + y });
+                        }
+                    }
+                }
+                return blocks;
+            }
+        }
+
+        console.log('Tetromino class defined');
     </script>
 </body>
 </html>
