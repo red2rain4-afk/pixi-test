@@ -224,6 +224,42 @@
                 this.uiContainer.addChild(this.linesText);
             }
 
+            drawNextPiece(nextPieceType) {
+                // 기존 미리보기 제거
+                if (this.nextPieceContainer) {
+                    this.uiContainer.removeChild(this.nextPieceContainer);
+                }
+
+                this.nextPieceContainer = new PIXI.Container();
+                this.uiContainer.addChild(this.nextPieceContainer);
+
+                // "다음" 텍스트
+                const label = new PIXI.Text({
+                    text: '다음',
+                    style: { fill: 0xffffff, fontSize: 20 }
+                });
+                label.x = BOARD_WIDTH * BLOCK_SIZE + 20;
+                label.y = 50;
+                this.nextPieceContainer.addChild(label);
+
+                // 다음 피스 그리기
+                const shape = SHAPES[nextPieceType];
+                const color = COLORS[nextPieceType];
+                const offsetX = BOARD_WIDTH * BLOCK_SIZE + 20;
+                const offsetY = 90;
+
+                for (let y = 0; y < shape.length; y++) {
+                    for (let x = 0; x < shape[y].length; x++) {
+                        if (shape[y][x]) {
+                            const block = new PIXI.Graphics();
+                            block.rect(offsetX + x * 24, offsetY + y * 24, 22, 22);
+                            block.fill(color);
+                            this.nextPieceContainer.addChild(block);
+                        }
+                    }
+                }
+            }
+
             drawBoard(board) {
                 this.boardContainer.removeChildren();
 
@@ -422,6 +458,9 @@
                     this.renderer.drawPiece(this.currentPiece);
                 }
                 this.renderer.updateUI(this.score, this.level, this.lines);
+                if (this.nextPiece) {
+                    this.renderer.drawNextPiece(this.nextPiece);
+                }
             }
 
             setupInput() {
