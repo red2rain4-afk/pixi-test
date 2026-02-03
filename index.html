@@ -318,6 +318,76 @@
         }
 
         console.log('PieceBag class defined');
+
+        class Tetris {
+            constructor() {
+                this.board = new Board();
+                this.renderer = new Renderer();
+                this.pieceBag = new PieceBag();
+
+                this.currentPiece = null;
+                this.nextPiece = null;
+
+                this.score = 0;
+                this.level = 1;
+                this.lines = 0;
+
+                this.state = GameState.PLAYING;
+                this.dropCounter = 0;
+                this.dropInterval = 1000; // 1초
+                this.lastTime = 0;
+
+                this.keysPressed = {};
+            }
+
+            async init() {
+                await this.renderer.init();
+                this.spawnPiece();
+                this.setupInput();
+                this.start();
+            }
+
+            spawnPiece() {
+                if (!this.nextPiece) {
+                    this.nextPiece = this.pieceBag.next();
+                }
+
+                this.currentPiece = new Tetromino(this.nextPiece);
+                this.nextPiece = this.pieceBag.next();
+
+                // 스폰 위치에서 충돌하면 게임오버
+                if (this.board.checkCollision(this.currentPiece)) {
+                    this.state = GameState.GAME_OVER;
+                    this.renderer.showGameOver();
+                }
+            }
+
+            start() {
+                const gameLoop = (time = 0) => {
+                    if (this.state === GameState.PLAYING) {
+                        const deltaTime = time - this.lastTime;
+                        this.lastTime = time;
+                        this.update(deltaTime);
+                    }
+                    requestAnimationFrame(gameLoop);
+                };
+                requestAnimationFrame(gameLoop);
+            }
+
+            update(deltaTime) {
+                // 다음 태스크에서 구현
+            }
+
+            setupInput() {
+                // 다음 태스크에서 구현
+            }
+        }
+
+        console.log('Tetris class defined');
+
+        // 게임 초기화 및 시작
+        const game = new Tetris();
+        game.init();
     </script>
 </body>
 </html>
