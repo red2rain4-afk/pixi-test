@@ -100,6 +100,71 @@
         }
 
         console.log('Tetromino class defined');
+
+        class Board {
+            constructor() {
+                this.grid = [];
+                for (let y = 0; y < BOARD_HEIGHT; y++) {
+                    this.grid[y] = new Array(BOARD_WIDTH).fill(0);
+                }
+            }
+
+            checkCollision(tetromino, offsetX = 0, offsetY = 0) {
+                const blocks = tetromino.getBlocks();
+
+                for (const block of blocks) {
+                    const newX = block.x + offsetX;
+                    const newY = block.y + offsetY;
+
+                    // 벽 충돌
+                    if (newX < 0 || newX >= BOARD_WIDTH) return true;
+
+                    // 바닥 충돌
+                    if (newY >= BOARD_HEIGHT) return true;
+
+                    // 상단은 허용 (스폰 위치)
+                    if (newY < 0) continue;
+
+                    // 블록 충돌
+                    if (this.grid[newY][newX] !== 0) return true;
+                }
+
+                return false;
+            }
+
+            placePiece(tetromino) {
+                const blocks = tetromino.getBlocks();
+
+                for (const block of blocks) {
+                    if (block.y >= 0 && block.y < BOARD_HEIGHT) {
+                        this.grid[block.y][block.x] = tetromino.type;
+                    }
+                }
+            }
+
+            clearLines() {
+                let linesCleared = 0;
+
+                for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+                    if (this.grid[y].every(cell => cell !== 0)) {
+                        // 줄 제거
+                        this.grid.splice(y, 1);
+                        this.grid.unshift(new Array(BOARD_WIDTH).fill(0));
+                        linesCleared++;
+                        y++; // 같은 y를 다시 체크
+                    }
+                }
+
+                return linesCleared;
+            }
+
+            isGameOver() {
+                // 최상단 행에 블록이 있으면 게임오버
+                return this.grid[0].some(cell => cell !== 0);
+            }
+        }
+
+        console.log('Board class defined');
     </script>
 </body>
 </html>
