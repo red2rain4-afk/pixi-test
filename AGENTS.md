@@ -4,6 +4,18 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
+## Language Preference
+
+**Default language: Korean (한국어)**
+
+- **Documentation** (docs/, plans/, README files): Write in Korean
+- **Code comments**: Write in Korean for better team understanding
+- **Commit messages**: Write in Korean
+- **Code/variables/functions**: Use English (industry standard)
+- **AGENTS.md itself**: Keep in English (shared community guideline)
+
+When generating content, default to Korean unless the content type requires English (e.g., code identifiers).
+
 ## 1. Ask First, Code Later
 
 **Use AskUserQuestion when anything is unclear. Assumptions are expensive.**
