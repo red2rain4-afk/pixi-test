@@ -24,8 +24,41 @@
     <div id="game-container"></div>
     <script src="https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.min.js"></script>
     <script>
-        // 게임 코드가 여기에 들어갑니다
-        console.log('PixiJS loaded:', typeof PIXI !== 'undefined');
+        // 게임 상수
+        const BLOCK_SIZE = 32;
+        const BOARD_WIDTH = 10;
+        const BOARD_HEIGHT = 20;
+        const COLORS = {
+            I: 0x00F0F0,
+            O: 0xF0F000,
+            T: 0xA000F0,
+            S: 0x00F000,
+            Z: 0xF00000,
+            J: 0x0000F0,
+            L: 0xF0A000
+        };
+
+        // 테트로미노 모양 정의
+        const SHAPES = {
+            I: [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
+            O: [[1,1], [1,1]],
+            T: [[0,1,0], [1,1,1], [0,0,0]],
+            S: [[0,1,1], [1,1,0], [0,0,0]],
+            Z: [[1,1,0], [0,1,1], [0,0,0]],
+            J: [[1,0,0], [1,1,1], [0,0,0]],
+            L: [[0,0,1], [1,1,1], [0,0,0]]
+        };
+
+        const SHAPE_NAMES = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+
+        // 게임 상태
+        const GameState = {
+            PLAYING: 'PLAYING',
+            PAUSED: 'PAUSED',
+            GAME_OVER: 'GAME_OVER'
+        };
+
+        console.log('Constants defined');
     </script>
 </body>
 </html>
