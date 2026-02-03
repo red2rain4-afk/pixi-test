@@ -422,10 +422,14 @@
 
             start() {
                 const gameLoop = (time = 0) => {
+                    const deltaTime = time - this.lastTime;
+                    this.lastTime = time;
+
                     if (this.state === GameState.PLAYING) {
-                        const deltaTime = time - this.lastTime;
-                        this.lastTime = time;
                         this.update(deltaTime);
+                    } else {
+                        // 일시정지나 게임오버 상태에서도 렌더링
+                        this.render();
                     }
                     requestAnimationFrame(gameLoop);
                 };
