@@ -326,6 +326,28 @@
                     this.uiContainer.removeChild(this.gameOverText);
                 }
             }
+
+            showPaused() {
+                if (!this.pausedText) {
+                    this.pausedText = new PIXI.Text({
+                        text: 'PAUSED\n\nP: 계속',
+                        style: {
+                            fill: 0xffff00,
+                            fontSize: 32,
+                            align: 'center'
+                        }
+                    });
+                    this.pausedText.x = BOARD_WIDTH * BLOCK_SIZE / 2 - 80;
+                    this.pausedText.y = BOARD_HEIGHT * BLOCK_SIZE / 2 - 50;
+                }
+                this.uiContainer.addChild(this.pausedText);
+            }
+
+            hidePaused() {
+                if (this.pausedText && this.uiContainer.children.includes(this.pausedText)) {
+                    this.uiContainer.removeChild(this.pausedText);
+                }
+            }
         }
 
         console.log('Renderer class defined');
@@ -460,6 +482,12 @@
                 this.renderer.updateUI(this.score, this.level, this.lines);
                 if (this.nextPiece) {
                     this.renderer.drawNextPiece(this.nextPiece);
+                }
+
+                if (this.state === GameState.PAUSED) {
+                    this.renderer.showPaused();
+                } else {
+                    this.renderer.hidePaused();
                 }
             }
 
