@@ -425,7 +425,93 @@
             }
 
             setupInput() {
-                // 다음 태스크에서 구현
+                document.addEventListener('keydown', (e) => {
+                    if (this.keysPressed[e.key]) return; // 키 반복 방지
+                    this.keysPressed[e.key] = true;
+
+                    if (this.state === GameState.GAME_OVER) {
+                        if (e.key === 'r' || e.key === 'R') {
+                            this.restart();
+                        }
+                        return;
+                    }
+
+                    if (this.state === GameState.PAUSED) {
+                        if (e.key === 'p' || e.key === 'P') {
+                            this.state = GameState.PLAYING;
+                        }
+                        return;
+                    }
+
+                    switch(e.key) {
+                        case 'ArrowLeft':
+                            this.moveLeft();
+                            break;
+                        case 'ArrowRight':
+                            this.moveRight();
+                            break;
+                        case 'ArrowDown':
+                            this.moveDown();
+                            break;
+                        case 'ArrowUp':
+                            this.rotate();
+                            break;
+                        case 'p':
+                        case 'P':
+                            this.state = GameState.PAUSED;
+                            break;
+                    }
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    this.keysPressed[e.key] = false;
+                });
+            }
+
+            moveLeft() {
+                if (!this.board.checkCollision(this.currentPiece, -1, 0)) {
+                    this.currentPiece.x--;
+                }
+            }
+
+            moveRight() {
+                if (!this.board.checkCollision(this.currentPiece, 1, 0)) {
+                    this.currentPiece.x++;
+                }
+            }
+
+            rotate() {
+                const originalShape = this.currentPiece.shape;
+                const rotatedShape = this.currentPiece.rotate();
+                this.currentPiece.shape = rotatedShape;
+
+                // 충돌 체크
+                if (this.board.checkCollision(this.currentPiece)) {
+                    // 벽 킥 시도: 왼쪽으로 1칸
+                    this.currentPiece.x--;
+                    if (this.board.checkCollision(this.currentPiece)) {
+                        // 오른쪽으로 2칸
+                        this.currentPiece.x += 2;
+                        if (this.board.checkCollision(this.currentPiece)) {
+                            // 회전 취소
+                            this.currentPiece.x--;
+                            this.currentPiece.shape = originalShape;
+                        }
+                    }
+                }
+            }
+
+            restart() {
+                this.board = new Board();
+                this.pieceBag = new PieceBag();
+                this.score = 0;
+                this.level = 1;
+                this.lines = 0;
+                this.dropInterval = 1000;
+                this.state = GameState.PLAYING;
+                this.nextPiece = null;
+                this.renderer.hideGameOver();
+                this.spawnPiece();
             }
         }
 
