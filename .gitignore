@@ -1,2 +1,5 @@
 # Firebase
 firebase-debug.log
+
+# Git worktrees
+.worktrees/
