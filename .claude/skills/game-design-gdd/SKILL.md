@@ -303,7 +303,11 @@ A: 1) 간단한 프로토타입 제작, 2) Chrome DevTools로 FPS, 메모리 측
 ---
 
 **이 스킬 사용 후에는:**
-1. 생성된 GDD를 프로젝트 루트에 `game-design-doc.md`로 저장
+1. 생성된 GDD를 `docs/plans/`에 저장 (예: `docs/plans/[게임명]-gdd.md`)
 2. 프로토타입 개발 시작
 3. 플레이테스트 후 GDD 업데이트
 4. `validate_gdd.py`로 주기적 검증
+
+**파일 위치:**
+- `docs/plans/` 디렉토리가 없으면 먼저 생성: `mkdir -p docs/plans`
+- 다른 기획 문서(brainstorming 등)와 함께 관리
