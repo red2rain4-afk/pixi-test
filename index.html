@@ -375,7 +375,53 @@
             }
 
             update(deltaTime) {
-                // 다음 태스크에서 구현
+                this.dropCounter += deltaTime;
+
+                if (this.dropCounter > this.dropInterval) {
+                    this.moveDown();
+                    this.dropCounter = 0;
+                }
+
+                this.render();
+            }
+
+            moveDown() {
+                if (!this.board.checkCollision(this.currentPiece, 0, 1)) {
+                    this.currentPiece.y++;
+                } else {
+                    // 피스를 보드에 고정
+                    this.board.placePiece(this.currentPiece);
+
+                    // 줄 제거
+                    const linesCleared = this.board.clearLines();
+                    if (linesCleared > 0) {
+                        this.lines += linesCleared;
+                        this.updateScore(linesCleared);
+                    }
+
+                    // 새 피스 생성
+                    this.spawnPiece();
+                }
+            }
+
+            updateScore(linesCleared) {
+                const points = [0, 100, 300, 500, 800];
+                this.score += points[linesCleared] * this.level;
+
+                // 레벨업 (10줄마다)
+                const newLevel = Math.floor(this.lines / 10) + 1;
+                if (newLevel > this.level) {
+                    this.level = newLevel;
+                    this.dropInterval = Math.max(100, 1000 - (this.level - 1) * 100);
+                }
+            }
+
+            render() {
+                this.renderer.drawBoard(this.board);
+                if (this.currentPiece) {
+                    this.renderer.drawPiece(this.currentPiece);
+                }
+                this.renderer.updateUI(this.score, this.level, this.lines);
             }
 
             setupInput() {
