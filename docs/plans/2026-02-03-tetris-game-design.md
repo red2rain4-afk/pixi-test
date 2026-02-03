@@ -1,62 +1,62 @@
-# Tetris Game Design
+# 테트리스 게임 설계
 
-**Date:** 2026-02-03
-**Type:** Classic Tetris with PixiJS
-**Approach:** Single HTML file with inline JavaScript
+**날짜:** 2026-02-03
+**유형:** PixiJS를 사용한 클래식 테트리스
+**방식:** 인라인 JavaScript를 포함한 단일 HTML 파일
 
-## Requirements
+## 요구사항
 
-- Classic tetris with 7 tetromino pieces (I, O, T, S, Z, J, L)
-- Basic rotation, line clearing, scoring
-- Simple colored blocks (no textures)
-- Single HTML file using PixiJS CDN
-- Quick prototype for PixiJS testing
+- 7개 테트로미노 피스(I, O, T, S, Z, J, L)를 가진 클래식 테트리스
+- 기본 회전, 줄 제거, 점수 기능
+- 단순한 컬러 블록 (텍스처 없음)
+- PixiJS CDN을 사용하는 단일 HTML 파일
+- PixiJS 테스트를 위한 빠른 프로토타입
 
-## Architecture
+## 아키텍처
 
-### Core Classes
+### 핵심 클래스
 
-1. **`Tetris`** (Main Game)
-   - Game loop management
-   - State management: `MENU`, `PLAYING`, `PAUSED`, `GAME_OVER`
-   - PixiJS app initialization
-   - Keyboard input handling
+1. **`Tetris`** (메인 게임)
+   - 게임 루프 관리
+   - 상태 관리: `MENU`, `PLAYING`, `PAUSED`, `GAME_OVER`
+   - PixiJS 앱 초기화
+   - 키보드 입력 처리
 
 2. **`Board`**
-   - 10x20 grid representation (2D array)
-   - Block placement and collision detection
-   - Line clearing logic
-   - Game over detection
+   - 10x20 그리드 표현 (2D 배열)
+   - 블록 배치 및 충돌 감지
+   - 줄 제거 로직
+   - 게임 오버 감지
 
 3. **`Tetromino`**
-   - 7 piece definitions (4x4 matrices)
-   - Rotation logic (clockwise 90°)
-   - Movement (left, right, down)
-   - Position and color tracking
+   - 7개 피스 정의 (4x4 행렬)
+   - 회전 로직 (시계방향 90°)
+   - 이동 (좌, 우, 아래)
+   - 위치 및 색상 추적
 
 4. **`Renderer`**
-   - PixiJS Graphics rendering
-   - Board visualization (32x32 pixel blocks)
-   - Current piece rendering
-   - UI elements (score, level, lines, next piece preview)
+   - PixiJS Graphics 렌더링
+   - 보드 시각화 (32x32 픽셀 블록)
+   - 현재 피스 렌더링
+   - UI 요소 (점수, 레벨, 줄 수, 다음 피스 미리보기)
 
-### Game States
+### 게임 상태
 
-- `MENU`: Initial screen (optional, can start directly)
-- `PLAYING`: Active gameplay
-- `PAUSED`: Game paused (P key)
-- `GAME_OVER`: Game ended, awaiting restart (R key)
+- `MENU`: 초기 화면 (선택사항, 바로 시작 가능)
+- `PLAYING`: 활성 게임플레이
+- `PAUSED`: 게임 일시정지 (P 키)
+- `GAME_OVER`: 게임 종료, 재시작 대기 (R 키)
 
-## Data Structures
+## 데이터 구조
 
-### Board Grid
+### 보드 그리드
 ```javascript
-grid: number[][]  // 10 columns x 20 rows
-// 0 = empty cell
-// 1-7 = occupied cell with tetromino color
+grid: number[][]  // 10열 x 20행
+// 0 = 빈 셀
+// 1-7 = 테트로미노 색상으로 채워진 셀
 ```
 
-### Tetromino Shapes
+### 테트로미노 모양
 ```javascript
 SHAPES = {
   I: [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
@@ -69,159 +69,159 @@ SHAPES = {
 }
 ```
 
-### Color Palette
-- I: Cyan (#00F0F0)
-- O: Yellow (#F0F000)
-- T: Purple (#A000F0)
-- S: Green (#00F000)
-- Z: Red (#F00000)
-- J: Blue (#0000F0)
-- L: Orange (#F0A000)
+### 색상 팔레트
+- I: 하늘색 (#00F0F0)
+- O: 노란색 (#F0F000)
+- T: 보라색 (#A000F0)
+- S: 초록색 (#00F000)
+- Z: 빨간색 (#F00000)
+- J: 파란색 (#0000F0)
+- L: 주황색 (#F0A000)
 
-## Game Logic
+## 게임 로직
 
-### Game Loop
-1. Every frame: Move current piece down after time interval
-2. On collision: Lock piece to board, check line clears, spawn new piece
-3. Score calculation: 1 line=100, 2 lines=300, 3 lines=500, 4 lines=800
-4. Level up: Every 10 lines, increase fall speed
-5. Game over: When new piece cannot spawn
+### 게임 루프
+1. 매 프레임: 일정 시간 간격으로 현재 피스를 아래로 이동
+2. 충돌 시: 피스를 보드에 고정, 줄 제거 확인, 새 피스 생성
+3. 점수 계산: 1줄=100, 2줄=300, 3줄=500, 4줄=800
+4. 레벨업: 10줄마다, 낙하 속도 증가
+5. 게임 오버: 새 피스를 생성할 수 없을 때
 
-### Collision Detection
+### 충돌 감지
 ```javascript
 checkCollision(tetromino, x, y):
-  - Wall collision: x < 0 or x + width > 10
-  - Floor collision: y + height > 20
-  - Block collision: grid[y][x] !== 0
-  - Return: boolean
+  - 벽 충돌: x < 0 또는 x + width > 10
+  - 바닥 충돌: y + height > 20
+  - 블록 충돌: grid[y][x] !== 0
+  - 반환: boolean
 ```
 
-### Rotation with Wall Kick
-- Default: Rotate clockwise 90°
-- If collision after rotation: Try shifting 1 cell left/right
-- If still colliding: Cancel rotation
+### 벽 킥이 있는 회전
+- 기본: 시계방향 90° 회전
+- 회전 후 충돌 시: 1칸 왼쪽/오른쪽 이동 시도
+- 여전히 충돌 시: 회전 취소
 
-### Random System
-- 7-bag randomizer: Shuffle all 7 pieces, dispense in order
-- Ensures fair distribution of pieces
+### 랜덤 시스템
+- 7-bag 랜덤화: 7개 피스를 모두 섞어 순서대로 분배
+- 피스의 공정한 분배 보장
 
-## Controls
+## 컨트롤
 
-- **Arrow Left/Right**: Move piece horizontally
-- **Arrow Up**: Rotate piece
-- **Arrow Down**: Soft drop (faster fall)
-- **Space**: Hard drop (instant fall) - optional
-- **P**: Pause/unpause
-- **R**: Restart (game over only)
+- **화살표 좌/우**: 피스를 좌우로 이동
+- **화살표 위**: 피스 회전
+- **화살표 아래**: 소프트 드롭 (빠른 낙하)
+- **스페이스**: 하드 드롭 (즉시 낙하) - 선택사항
+- **P**: 일시정지/재개
+- **R**: 재시작 (게임 오버 시에만)
 
-## UI Layout
+## UI 레이아웃
 
 ```
 ┌─────────────────┬─────────┐
-│                 │ NEXT    │
-│   GAME BOARD    │ [□□]    │
+│                 │ 다음    │
+│   게임 보드     │ [□□]    │
 │   (10x20)       │ [□□]    │
 │                 │         │
-│                 │ SCORE   │
+│                 │ 점수    │
 │                 │ 0       │
-│                 │ LEVEL 1 │
-│                 │ LINES 0 │
+│                 │ 레벨 1  │
+│                 │ 줄 수 0 │
 └─────────────────┴─────────┘
 ```
 
-## Rendering
+## 렌더링
 
-### Board Rendering
-- Each cell: 32x32 pixels
-- Grid lines for boundaries
-- PixiJS Graphics for drawing rectangles
+### 보드 렌더링
+- 각 셀: 32x32 픽셀
+- 경계를 위한 그리드 선
+- 사각형 그리기를 위한 PixiJS Graphics
 
-### Piece Rendering
-- Draw each occupied cell of current tetromino
-- Use corresponding color from palette
+### 피스 렌더링
+- 현재 테트로미노의 각 채워진 셀을 그림
+- 팔레트의 해당 색상 사용
 
-### UI Rendering
-- PixiJS Text for score/level/lines
-- Small preview area for next piece (4x4 grid)
+### UI 렌더링
+- 점수/레벨/줄 수를 위한 PixiJS Text
+- 다음 피스를 위한 작은 미리보기 영역 (4x4 그리드)
 
-## Error Handling
+## 에러 처리
 
-### Edge Cases
-- **Rotation near wall**: Wall kick mechanism
-- **Fast input**: Debounce repeated key events (except down arrow)
-- **Game over**: Detect when spawn position is blocked
-- **Pause during game over**: Ignore pause input
+### 엣지 케이스
+- **벽 근처 회전**: 벽 킥 메커니즘
+- **빠른 입력**: 반복되는 키 이벤트 디바운스 (아래 화살표 제외)
+- **게임 오버**: 생성 위치가 막혔을 때 감지
+- **게임 오버 중 일시정지**: 일시정지 입력 무시
 
-### Input Handling
-- Use `keydown` event
-- Track key state to prevent repeat
-- Exception: Down arrow allows continuous press
+### 입력 처리
+- `keydown` 이벤트 사용
+- 반복 방지를 위해 키 상태 추적
+- 예외: 아래 화살표는 연속 누름 허용
 
-## Implementation Order
+## 구현 순서
 
-1. **Basic Setup** (~10 min)
-   - HTML structure
-   - PixiJS CDN integration
-   - Canvas initialization
-   - Empty board rendering
+1. **기본 설정** (~10분)
+   - HTML 구조
+   - PixiJS CDN 통합
+   - 캔버스 초기화
+   - 빈 보드 렌더링
 
-2. **Tetromino Class** (~15 min)
-   - Define 7 shapes
-   - Rotation logic
-   - Manual console testing
+2. **Tetromino 클래스** (~15분)
+   - 7개 모양 정의
+   - 회전 로직
+   - 콘솔에서 수동 테스트
 
-3. **Board + Collision** (~20 min)
-   - Grid creation
-   - `placePiece()` method
-   - `checkCollision()` method
-   - Test piece placement
+3. **Board + 충돌** (~20분)
+   - 그리드 생성
+   - `placePiece()` 메서드
+   - `checkCollision()` 메서드
+   - 피스 배치 테스트
 
-4. **Game Loop** (~15 min)
-   - Automatic falling
-   - Keyboard input
-   - New piece generation
+4. **게임 루프** (~15분)
+   - 자동 낙하
+   - 키보드 입력
+   - 새 피스 생성
 
-5. **Line Clearing + Score** (~10 min)
-   - `clearLines()` method
-   - Score calculation
-   - Level progression
+5. **줄 제거 + 점수** (~10분)
+   - `clearLines()` 메서드
+   - 점수 계산
+   - 레벨 진행
 
-6. **UI + Next Piece** (~10 min)
-   - Score/level display
-   - Next piece preview
+6. **UI + 다음 피스** (~10분)
+   - 점수/레벨 표시
+   - 다음 피스 미리보기
 
-7. **Game Over + Restart** (~5 min)
-   - Game over detection
-   - Restart functionality
+7. **게임 오버 + 재시작** (~5분)
+   - 게임 오버 감지
+   - 재시작 기능
 
-**Total estimated time:** ~1.5 hours
-**Expected code size:** ~400-500 lines (including HTML)
+**총 예상 시간:** ~1.5시간
+**예상 코드 크기:** ~400-500줄 (HTML 포함)
 
-## Testing Checklist
+## 테스트 체크리스트
 
-Manual testing:
-- [ ] All 7 pieces rotate correctly
-- [ ] Wall, floor, block collision detection works
-- [ ] Line clearing removes full rows
-- [ ] Score calculation: 1 line, 4 lines (tetris)
-- [ ] Level increases every 10 lines
-- [ ] Fall speed increases with level
-- [ ] Game over when spawn blocked
-- [ ] Restart clears state properly
-- [ ] Pause/unpause works
-- [ ] Next piece preview shows correct piece
+수동 테스트:
+- [ ] 7개 피스가 모두 올바르게 회전
+- [ ] 벽, 바닥, 블록 충돌 감지 작동
+- [ ] 줄 제거가 가득 찬 행을 제거
+- [ ] 점수 계산: 1줄, 4줄 (테트리스)
+- [ ] 레벨이 10줄마다 증가
+- [ ] 낙하 속도가 레벨에 따라 증가
+- [ ] 생성이 막혔을 때 게임 오버
+- [ ] 재시작이 상태를 올바르게 초기화
+- [ ] 일시정지/재개 작동
+- [ ] 다음 피스 미리보기가 올바른 피스 표시
 
-## Performance Considerations
+## 성능 고려사항
 
-- Use `requestAnimationFrame` for game loop
-- Optional: Dirty flag for render optimization (only redraw on change)
-- Keep grid operations O(n) where possible
+- 게임 루프에 `requestAnimationFrame` 사용
+- 선택사항: 렌더링 최적화를 위한 더티 플래그 (변경 시에만 다시 그리기)
+- 가능한 경우 그리드 연산을 O(n)으로 유지
 
-## Future Enhancements (Out of Scope)
+## 향후 개선사항 (범위 외)
 
-- Hold piece functionality
-- Ghost piece (preview landing position)
-- Particle effects on line clear
-- Sound effects
-- Touch controls for mobile
-- High score persistence
+- 홀드 피스 기능
+- 고스트 피스 (착지 위치 미리보기)
+- 줄 제거 시 파티클 효과
+- 사운드 효과
+- 모바일용 터치 컨트롤
+- 최고 점수 저장
