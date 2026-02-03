@@ -4,15 +4,37 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-## 1. Think Before Coding
+## 1. Ask First, Code Later
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+**Use AskUserQuestion when anything is unclear. Assumptions are expensive.**
 
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+**When to ask (use AskUserQuestion tool):**
+- Multiple valid approaches exist → Present options, don't pick silently
+- Requirements are vague → Clarify before writing code
+- User's intent is ambiguous → Ask what they actually want
+- Scope is unclear → "Should I also handle X?" beats guessing
+- Trade-offs exist → Surface them: "Fast vs. flexible?"
+- Error details are missing → "What error did you see?" before debugging
+
+**Red flags you're assuming too much:**
+- "I'll just..." → Stop. Is this what they want?
+- "Probably they mean..." → Ask instead
+- "Let me try this approach..." → Why this one? Ask if unsure
+- "I'll add X just in case..." → Do they need X? Ask
+
+**Examples:**
+```
+❌ Bad: User says "it's not working" → Start debugging blind
+✅ Good: Ask "What error message do you see?" or "What did you expect to happen?"
+
+❌ Bad: User says "add validation" → Pick rules yourself
+✅ Good: Ask "What should be validated? Email format? Length limits?"
+
+❌ Bad: Multiple solutions possible → Pick one silently
+✅ Good: Ask "Approach A is faster, B is more flexible. Which matters more?"
+```
+
+**Rule:** If you're about to make an assumption, use AskUserQuestion instead.
 
 ## 2. Simplicity First
 
@@ -62,4 +84,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+**These guidelines are working if:**
+- Clarifying questions (AskUserQuestion) come BEFORE implementation, not after
+- Fewer unnecessary changes in diffs
+- Fewer rewrites due to overcomplication or wrong assumptions
+- User says "yes, that's what I meant" not "no, I meant..."
