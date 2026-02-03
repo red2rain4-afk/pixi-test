@@ -165,6 +165,134 @@
         }
 
         console.log('Board class defined');
+
+        class Renderer {
+            constructor() {
+                this.app = new PIXI.Application();
+                this.boardContainer = new PIXI.Container();
+                this.pieceContainer = new PIXI.Container();
+                this.uiContainer = new PIXI.Container();
+
+                this.scoreText = null;
+                this.levelText = null;
+                this.linesText = null;
+                this.gameOverText = null;
+            }
+
+            async init() {
+                await this.app.init({
+                    width: BOARD_WIDTH * BLOCK_SIZE + 200,
+                    height: BOARD_HEIGHT * BLOCK_SIZE,
+                    backgroundColor: 0x16213e
+                });
+
+                document.getElementById('game-container').appendChild(this.app.canvas);
+
+                this.app.stage.addChild(this.boardContainer);
+                this.app.stage.addChild(this.pieceContainer);
+                this.app.stage.addChild(this.uiContainer);
+
+                this.createUI();
+            }
+
+            createUI() {
+                // 점수
+                this.scoreText = new PIXI.Text({
+                    text: '점수: 0',
+                    style: { fill: 0xffffff, fontSize: 20 }
+                });
+                this.scoreText.x = BOARD_WIDTH * BLOCK_SIZE + 20;
+                this.scoreText.y = 200;
+                this.uiContainer.addChild(this.scoreText);
+
+                // 레벨
+                this.levelText = new PIXI.Text({
+                    text: '레벨: 1',
+                    style: { fill: 0xffffff, fontSize: 20 }
+                });
+                this.levelText.x = BOARD_WIDTH * BLOCK_SIZE + 20;
+                this.levelText.y = 240;
+                this.uiContainer.addChild(this.levelText);
+
+                // 줄 수
+                this.linesText = new PIXI.Text({
+                    text: '줄: 0',
+                    style: { fill: 0xffffff, fontSize: 20 }
+                });
+                this.linesText.x = BOARD_WIDTH * BLOCK_SIZE + 20;
+                this.linesText.y = 280;
+                this.uiContainer.addChild(this.linesText);
+            }
+
+            drawBoard(board) {
+                this.boardContainer.removeChildren();
+
+                // 그리드 선
+                const grid = new PIXI.Graphics();
+                grid.rect(0, 0, BOARD_WIDTH * BLOCK_SIZE, BOARD_HEIGHT * BLOCK_SIZE);
+                grid.stroke({ width: 2, color: 0x0f3460 });
+                this.boardContainer.addChild(grid);
+
+                // 보드 블록
+                for (let y = 0; y < BOARD_HEIGHT; y++) {
+                    for (let x = 0; x < BOARD_WIDTH; x++) {
+                        if (board.grid[y][x] !== 0) {
+                            const block = new PIXI.Graphics();
+                            const color = COLORS[board.grid[y][x]];
+                            block.rect(x * BLOCK_SIZE + 1, y * BLOCK_SIZE + 1,
+                                       BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+                            block.fill(color);
+                            this.boardContainer.addChild(block);
+                        }
+                    }
+                }
+            }
+
+            drawPiece(tetromino) {
+                this.pieceContainer.removeChildren();
+
+                const blocks = tetromino.getBlocks();
+                for (const block of blocks) {
+                    if (block.y >= 0) {
+                        const graphic = new PIXI.Graphics();
+                        graphic.rect(block.x * BLOCK_SIZE + 1, block.y * BLOCK_SIZE + 1,
+                                    BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+                        graphic.fill(tetromino.color);
+                        this.pieceContainer.addChild(graphic);
+                    }
+                }
+            }
+
+            updateUI(score, level, lines) {
+                this.scoreText.text = `점수: ${score}`;
+                this.levelText.text = `레벨: ${level}`;
+                this.linesText.text = `줄: ${lines}`;
+            }
+
+            showGameOver() {
+                if (!this.gameOverText) {
+                    this.gameOverText = new PIXI.Text({
+                        text: 'GAME OVER\n\nR: 재시작',
+                        style: {
+                            fill: 0xff0000,
+                            fontSize: 32,
+                            align: 'center'
+                        }
+                    });
+                    this.gameOverText.x = BOARD_WIDTH * BLOCK_SIZE / 2 - 100;
+                    this.gameOverText.y = BOARD_HEIGHT * BLOCK_SIZE / 2 - 50;
+                }
+                this.uiContainer.addChild(this.gameOverText);
+            }
+
+            hideGameOver() {
+                if (this.gameOverText) {
+                    this.uiContainer.removeChild(this.gameOverText);
+                }
+            }
+        }
+
+        console.log('Renderer class defined');
     </script>
 </body>
 </html>
